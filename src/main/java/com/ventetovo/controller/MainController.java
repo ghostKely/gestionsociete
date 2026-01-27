@@ -1,0 +1,17 @@
+package com.ventetovo.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+@Controller
+@RequestMapping("/")
+public class MainController {
+
+    @GetMapping("/entrer")
+    public String entrer() {
+        System.out.println("=== APPEL DE /entrer ===");
+        return "login"; // -> WEB-INF/views/login.jsp
+    }
+
+}
