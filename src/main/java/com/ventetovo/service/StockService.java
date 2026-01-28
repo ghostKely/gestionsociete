@@ -1,0 +1,21 @@
+package com.ventetovo.service;
+
+import com.ventetovo.entity.StockActuel;
+import org.springframework.stereotype.Service;
+import com.ventetovo.repository.StockActuelRepo;
+
+import java.util.List;
+
+@Service
+public class StockService {
+
+    private final StockActuelRepo stockRepo;
+
+    public StockService(StockActuelRepo stockRepo) {
+        this.stockRepo = stockRepo;
+    }
+
+    public List<StockActuel> getAllCurrentStock() {
+        return stockRepo.findAll();
+    }
+}
