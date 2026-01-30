@@ -3,7 +3,7 @@ package com.ventetovo.entity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "vue_stock_actuel")

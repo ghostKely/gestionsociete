@@ -1,6 +1,6 @@
 package com.ventetovo.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "methode_article")
