@@ -44,7 +44,7 @@ public class InventaireController {
             model.addAttribute("error", "Erreur de base de données");
         }
 
-        return "inventaire";
+        return "stock/inventaire";
     }
 
     // =================== AJOUTER UN INVENTAIRE (ULTRA SIMPLE) ===================
@@ -75,6 +75,6 @@ public class InventaireController {
             redirectAttributes.addFlashAttribute("error", "Erreur: " + e.getMessage());
         }
 
-        return "redirect:/inventaire";
+        return "redirect:/stock/inventaire";
     }
 }

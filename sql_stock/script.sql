@@ -1,108 +1,176 @@
--- insert lapatia_Achat.sql dans ta base sauf le bon_receptionstock qui sera dessous
+CREATE DATABASE vente_tovo;
+\c vente_tovo;
 
-INSERT INTO role (nom_role, niveau_validation)
-VALUES
-('OPERATEUR', 0),
-('SUPERVISEUR', 1);
+CREATE TABLE role (
+    id_role SERIAL PRIMARY KEY,
+    nom_role VARCHAR(50) UNIQUE NOT NULL,
+    niveau_validation INT DEFAULT 0 -- 0=operateur, 1=valideur N1, 2=valideur N2
+);
 
-INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, id_role)
-SELECT 'Rakoto', 'Jean', 'jean.rakoto@company.mg', 'jean', r.id_role
-FROM role r WHERE r.nom_role = 'OPERATEUR';
+-- Roles
+INSERT INTO role (nom_role, niveau_validation) VALUES
+('Admin', 2),
+('Responsable Achats', 2),
+('Acheteur', 1),
+('Magasinier', 0),
+('Commercial', 1),
+('Responsable Ventes', 2);
 
-INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, id_role)
-SELECT 'Rasoa', 'Marie', 'marie.rasoa@company.mg', 'marie', r.id_role
-FROM role r WHERE r.nom_role = 'SUPERVISEUR';
 
-INSERT INTO fournisseur (nom, email, telephone)
-VALUES ('Tech Supplies Ltd', 'contact@techsupplies.com', '+261341234567');
+CREATE TABLE utilisateur (
+    id_utilisateur SERIAL PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    mot_de_passe VARCHAR(255) NOT NULL,
+    id_role INT NOT NULL,
+    actif BOOLEAN DEFAULT TRUE,
+    
+    CONSTRAINT fk_utilisateur_role FOREIGN KEY (id_role) REFERENCES role(id_role)
+);
+
+-- Utilisateurs
+INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, id_role) VALUES
+('ADMIN', 'Admin', 'admin@vente-tovo.mg', 'admin123', 1),
+('RAKOTO', 'Jean', 'jean@vente-tovo.mg', 'pass123', 2),
+('RABE', 'Marie', 'marie@vente-tovo.mg', 'pass123', 3),
+('RANDRIA', 'Paul', 'paul@vente-tovo.mg', 'pass123', 4),
+('RASOA', 'Sophie', 'sophie@vente-tovo.mg', 'pass123', 5)
+('DODA', 'Jean', 'magasinier@vente.com', 'pass123', 4);
+
+CREATE TABLE fournisseur (
+    id_fournisseur SERIAL PRIMARY KEY,
+    nom VARCHAR(150) NOT NULL,
+    email VARCHAR(150),
+    telephone VARCHAR(20)
+);
+
+CREATE TABLE article (
+    id_article SERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    designation VARCHAR(200) NOT NULL
+);
 
 INSERT INTO article (code, designation)
 VALUES
 ('ART-001', 'Ordinateur Portable Dell Latitude'),
 ('ART-002', 'Souris Optique USB Logitech');
 
-INSERT INTO prix (
-    id_article,
-    id_fournisseur,
-    type,
-    montant,
-    date_prix
-)
-VALUES (
-    1,
-    1,
-    'ACHAT',
-    2500.00,
-    CURRENT_DATE
+CREATE TABLE prix (
+    id_prix SERIAL PRIMARY KEY,
+    id_article INT NOT NULL,
+    id_fournisseur INT NOT NULL,
+    type VARCHAR(10) NOT NULL,
+    montant NUMERIC(15,2) NOT NULL,
+    date_prix DATE NOT NULL,
+    
+    FOREIGN KEY (id_article) REFERENCES article(id_article),
+    FOREIGN KEY (id_fournisseur) REFERENCES fournisseur(id_fournisseur)
+);
+
+-- Table achat_finance 
+CREATE TABLE achat_finance (
+    id_achat_finance SERIAL PRIMARY KEY,
+    montant_seuil NUMERIC(15,2) NOT NULL DEFAULT 1000000.00,
+    description VARCHAR(255),
+    actif BOOLEAN DEFAULT TRUE,
+    date_maj TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+    -- Données initiales
+    INSERT INTO achat_finance (montant_seuil, description, actif) 
+    VALUES (1000000.00, 'Seuil de validation par défaut - Montant au-dessus duquel une validation financière est requise', true);
+
+-- Table pour les proformas
+CREATE TABLE proforma (
+    id_proforma SERIAL PRIMARY KEY,
+    numero VARCHAR(50) UNIQUE NOT NULL,
+    token_demande VARCHAR(64) NOT NULL, -- Token unique pour regrouper les proformas d'une même demande
+    id_article INT NOT NULL,
+    id_fournisseur INT NOT NULL,
+    quantite INT NOT NULL,
+    prix_unitaire NUMERIC(15,2) NOT NULL,
+    montant_total NUMERIC(15,2) NOT NULL,
+    date_proforma TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    statut VARCHAR(20) DEFAULT 'EN_ATTENTE' CHECK (statut IN ('EN_ATTENTE', 'SELECTIONNE', 'REJETE')),
+    
+    FOREIGN KEY (id_article) REFERENCES article(id_article),
+    FOREIGN KEY (id_fournisseur) REFERENCES fournisseur(id_fournisseur)
+);
+
+-- Index pour optimiser les requêtes
+CREATE INDEX idx_proforma_token ON proforma(token_demande);
+CREATE INDEX idx_proforma_article ON proforma(id_article);
+CREATE INDEX idx_proforma_fournisseur ON proforma(id_fournisseur);
+
+-- table bon de commande
+CREATE TABLE bon_commande (
+    id_bon_commande SERIAL PRIMARY KEY,
+    id_proforma INT NOT NULL,
+    date_commande TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    statut VARCHAR(20) DEFAULT 'EN_COURS' CHECK (statut IN ('EN_COURS', 'LIVRE', 'ANNULE')),
+    
+    FOREIGN KEY (id_proforma) REFERENCES proforma(id_proforma)
 );
 
 
-INSERT INTO proforma (
-    numero,
-    token_demande,
-    id_article,
-    id_fournisseur,
-    quantite,
-    prix_unitaire,
-    montant_total
-)
-SELECT
-    'PROF-2025-001',
-    'TOKEN-REQ-001',
-    a.id_article,
-    f.id_fournisseur,
-    10,
-    2500.00,
-    25000.00
-FROM article a
-JOIN fournisseur f ON f.nom = 'Tech Supplies Ltd'
-WHERE a.code = 'ART-001';
+-- Table Facture Fournisseur
+CREATE TABLE facture_fournisseur (
+    id_facture SERIAL PRIMARY KEY,
+    numero_facture VARCHAR(50) UNIQUE NOT NULL,
+    id_bon_commande INT NOT NULL,
+    montant_total NUMERIC(15,2) NOT NULL,
+    date_facture DATE NOT NULL,
+    date_echeance DATE,
+    statut VARCHAR(20) DEFAULT 'EN_ATTENTE' CHECK (statut IN ('EN_ATTENTE', 'REGLEE', 'EN_RETARD', 'ANNULEE')),
+    
+    FOREIGN KEY (id_bon_commande) REFERENCES bon_commande(id_bon_commande)
+);
 
-INSERT INTO bon_commande (id_proforma)
-SELECT id_proforma
-FROM proforma
-WHERE numero = 'PROF-2025-001';
+-- Table Bon de Livraison
+CREATE TABLE bon_livraison (
+    id_bon_livraison SERIAL PRIMARY KEY,
+    numero_livraison VARCHAR(50) UNIQUE NOT NULL,
+    id_bon_commande INT NOT NULL,
+    date_livraison DATE NOT NULL,
+    transporteur VARCHAR(100),
+    numero_bon_transport VARCHAR(50),
+    statut VARCHAR(20) DEFAULT 'EN_ATTENTE' CHECK (statut IN ('EN_ATTENTE', 'RECU', 'PARTIEL', 'ANNULE')),
+    
+    FOREIGN KEY (id_bon_commande) REFERENCES bon_commande(id_bon_commande)
+);
 
-INSERT INTO facture_fournisseur (
-    numero_facture,
-    id_bon_commande,
-    montant_total,
-    date_facture,
-    date_echeance,
-    statut
-)
-SELECT
-    'FAC-2025-001',
-    bc.id_bon_commande,
-    25000.00,
-    CURRENT_DATE,
-    CURRENT_DATE + INTERVAL '30 days',
-    'EN_ATTENTE'
-FROM bon_commande bc
-JOIN proforma p ON p.id_proforma = bc.id_proforma
-WHERE p.numero = 'PROF-2025-001';
+-- Table Bon de Réception (lignes de livraison)
+CREATE TABLE bon_reception (
+    id_bon_reception SERIAL PRIMARY KEY,
+    id_bon_livraison INT NOT NULL,
+    id_article INT NOT NULL,
+    quantite_commandee INT NOT NULL,
+    quantite_recue INT NOT NULL,
+    quantite_non_conforme INT DEFAULT 0,
+    commentaire TEXT,
+    date_reception TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id_receptionnaire INT,
+    
+    FOREIGN KEY (id_bon_livraison) REFERENCES bon_livraison(id_bon_livraison) ON DELETE CASCADE,
+    FOREIGN KEY (id_article) REFERENCES article(id_article),
+    FOREIGN KEY (id_receptionnaire) REFERENCES utilisateur(id_utilisateur)
+);
 
-INSERT INTO bon_livraison (
-    numero_livraison,
-    id_bon_commande,
-    date_livraison,
-    transporteur,
-    numero_bon_transport,
-    statut
-)
-SELECT
-    'BL-2025-001',
-    bc.id_bon_commande,
-    CURRENT_DATE,
-    'TRANS-MG',
-    'BT-778899',
-    'RECU'
-FROM bon_commande bc
-JOIN proforma p ON p.id_proforma = bc.id_proforma
-WHERE p.numero = 'PROF-2025-001';
+CREATE OR REPLACE VIEW v_utilisateur_role AS
+SELECT 
+    u.id_utilisateur,
+    u.nom,
+    u.prenom,
+    u.email,
+    u.mot_de_passe,
+    u.actif,
+    r.id_role,
+    r.nom_role,
+    r.niveau_validation
+FROM utilisateur u
+JOIN role r ON r.id_role = u.id_role;
 
-
-
+-- FIN MODULE ACHAT
 
 CREATE TABLE site (
     id_site SERIAL PRIMARY KEY,
@@ -115,9 +183,6 @@ CREATE TABLE site (
 INSERT INTO site (code_site, nom_site, adresse, entite_legale)
 VALUES ('SITE-ANT-001', 'Site Antananarivo Central', 'Antananarivo', 'ABC Madagascar');
 
-
-
-
 CREATE TABLE depot (
     id_depot SERIAL PRIMARY KEY,
     code_depot VARCHAR(20) UNIQUE NOT NULL,
@@ -126,20 +191,6 @@ CREATE TABLE depot (
     adresse TEXT,
     responsable_id INT REFERENCES utilisateur(id_utilisateur)
 );
-
-INSERT INTO depot (code_depot, nom_depot, id_site, adresse, responsable_id)
-SELECT
-    'DEP-ANT-01',
-    'Dépôt Central Antananarivo',
-    s.id_site,
-    'Zone industrielle Antananarivo',
-    u.id_utilisateur
-FROM site s
-JOIN utilisateur u ON u.email = 'marie.rasoa@company.mg'
-WHERE s.code_site = 'SITE-ANT-001';
-
-
-
 
 
 
@@ -161,13 +212,6 @@ CREATE TABLE bon_receptionstock (
     FOREIGN KEY(id_depot) REFERENCES depot(id_depot)
 );
 
-
-
-
--- ========================================
--- Stock
--- ========================================
-
 CREATE TABLE methode_calcul_stock (
     id_methode SERIAL PRIMARY KEY,
     nom_methode VARCHAR(50) UNIQUE NOT NULL -- e.g., FIFO, LIFO, CMUP
@@ -182,9 +226,6 @@ VALUES ('CMUP');
 INSERT INTO methode_calcul_stock (nom_methode)
 VALUES ('FIFO');
 
-
-
-
 CREATE TABLE methode_article(
     id_methode_article SERIAL PRIMARY KEY,
     id_article INT NOT NULL,
@@ -192,16 +233,6 @@ CREATE TABLE methode_article(
     FOREIGN KEY (id_article) REFERENCES article(id_article),
     FOREIGN KEY (id_methode) REFERENCES methode_calcul_stock(id_methode)
 );
-
-INSERT INTO methode_article (id_article, id_methode)
-VALUES (1, 2);
-
-INSERT INTO methode_article (id_article, id_methode)
-VALUES (2, 2);
-
-
-
-
 
 
 CREATE OR REPLACE FUNCTION trg_set_article_methode()
@@ -222,8 +253,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
-
 CREATE TABLE mouvement_stock(
     stock_id SERIAL PRIMARY KEY,
     id_article INT NOT NULL, 
@@ -243,14 +272,6 @@ CREATE TRIGGER before_insert_mouvement_stock
 BEFORE INSERT ON mouvement_stock
 FOR EACH ROW
 EXECUTE FUNCTION trg_set_article_methode();
-
-
-
-
-
-
-
-
 
 -- Trigger d'insertion dans le stock lors de la réception d'un bon de réception
 
@@ -308,53 +329,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
-
 CREATE TRIGGER after_insert_bon_reception
 AFTER INSERT ON bon_receptionstock
 FOR EACH ROW
 EXECUTE FUNCTION trg_insert_stock_after_reception();
-
-
-
-
-INSERT INTO bon_receptionstock (
-    id_bon_livraison,
-    id_article,
-    quantite_commandee,
-    quantite_recue,
-    quantite_non_conforme,
-    commentaire,
-    id_receptionnaire,
-    id_depot
-)
-SELECT
-    bl.id_bon_livraison,
-    a.id_article,
-    10,
-    9,
-    1,
-    '1 unité endommagée',
-    u.id_utilisateur,
-    d.id_depot
-FROM bon_livraison bl
-JOIN bon_commande bc ON bc.id_bon_commande = bl.id_bon_commande
-JOIN proforma p ON p.id_proforma = bc.id_proforma
-JOIN article a ON a.id_article = p.id_article
-JOIN utilisateur u ON u.email = 'jean.rakoto@company.mg'
-JOIN depot d ON d.code_depot = 'DEP-ANT-01'
-WHERE bl.numero_livraison = 'BL-2025-001';
-
-
-
-
-
-
-
-
-
-
-
 
 CREATE TABLE lot_stock (
     id_lot SERIAL PRIMARY KEY,
@@ -367,12 +345,6 @@ CREATE TABLE lot_stock (
     FOREIGN KEY (id_article) REFERENCES article(id_article),
     FOREIGN KEY (id_depot) REFERENCES depot(id_depot)
 );
-
-
-
-
-
-
 
 CREATE TABLE mouvement_stock_calcul (
     id SERIAL PRIMARY KEY,
@@ -388,14 +360,6 @@ CREATE TABLE mouvement_stock_calcul (
     FOREIGN KEY (id_methode_article) REFERENCES methode_article(id_methode_article),
     FOREIGN KEY (id_article) REFERENCES article(id_article)
 );
-
-
-
-
-
-
-
-
 
 CREATE OR REPLACE FUNCTION fn_mouvement_stock()
 RETURNS TRIGGER
@@ -519,24 +483,11 @@ BEGIN
 END;
 $$;
 
-
-
-
-
-
 -- Trigger sur mouvement_stock
 CREATE TRIGGER trg_mouvement_stock
 AFTER INSERT ON mouvement_stock
 FOR EACH ROW
 EXECUTE FUNCTION fn_mouvement_stock();
-
-
-
-
-
-
-
-
 
 CREATE OR REPLACE VIEW vue_stock_actuel AS
 
@@ -589,10 +540,6 @@ JOIN methode_calcul_stock mcs
     ON mcs.id_methode = ma.id_methode
 WHERE mcs.nom_methode IN ('FIFO', 'LIFO');
 
-
-
--- PRECIEUX
-
 -- 1. Créer une fonction qui sera appelée par le trigger
 CREATE OR REPLACE FUNCTION sync_bon_reception_to_stock()
 RETURNS TRIGGER AS $$
@@ -637,18 +584,6 @@ AFTER INSERT ON bon_reception
 FOR EACH ROW
 EXECUTE FUNCTION sync_bon_reception_to_stock();
 
--- Table inventaire
-CREATE TABLE inventaire (
-    id_inventaire SERIAL PRIMARY KEY,
-    date_inventaire TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    id_article INT NOT NULL,
-    nbre_article INT NOT NULL CHECK (nbre_article >= 0),
-    commentaire TEXT,
-    id_utilisateur INT NOT NULL,
-    FOREIGN KEY (id_article) REFERENCES article(id_article),
-    FOREIGN KEY (id_utilisateur) REFERENCES utilisateur(id_utilisateur)
-);
-
 
 -- Table pour gérer les transferts entre dépôts
 CREATE TABLE transfert_depot (
@@ -674,17 +609,3 @@ CREATE TABLE transfert_depot (
 ALTER TABLE mouvement_stock 
 ADD COLUMN reference VARCHAR(100);
 
--- Insertion du Dépôt Central Antananarivo (existant dans votre script)
-INSERT INTO depot (code_depot, nom_depot, id_site, adresse, responsable_id)
-SELECT
-    'DEP-ANT-02',
-    'Dépôt Tanjombato',
-    s.id_site,
-    'Zone industrielle Antananarivo, Lot IVD 67',
-    u.id_utilisateur
-FROM site s
-JOIN utilisateur u ON u.email = 'marie.rasoa@company.mg'
-WHERE s.code_site = 'SITE-ANT-001';
-
-INSERT INTO methode_article (id_article, methode_calcul)
-VALUES (5, 'FIFO');
