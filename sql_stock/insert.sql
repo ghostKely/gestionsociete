@@ -17,14 +17,13 @@ INSERT INTO prix (id_article, id_fournisseur, type, montant, date_prix) VALUES
 (2, 2, 'ACHAT', 750, '2026-01-12'),  -- Grossiste B
 (2, 3, 'ACHAT', 780, '2026-01-12');  -- Grossiste C
 
-INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, id_role)
+INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, id_role) 
 SELECT 'Rakoto', 'Jean', 'jean.rakoto@company.mg', 'jean', r.id_role
 FROM role r WHERE r.nom_role = 'OPERATEUR';
 
 INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, id_role)
 SELECT 'Rasoa', 'Marie', 'marie.rasoa@company.mg', 'marie', r.id_role
 FROM role r WHERE r.nom_role = 'SUPERVISEUR';
-
 
 INSERT INTO depot (code_depot, nom_depot, id_site, adresse, responsable_id)
 SELECT
