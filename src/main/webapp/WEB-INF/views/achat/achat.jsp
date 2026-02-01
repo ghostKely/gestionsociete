@@ -574,7 +574,7 @@
             
             <div class="content-wrapper">
                 <div class="content-header">
-                    <h2>Liste des Articles - Demande d'Achat</h2>
+                    <h2>🛍️ Liste des articles - Demande d'Achat</h2>
                     <div class="content-actions">
                         <div class="filter-container">
                             <div class="search-box">

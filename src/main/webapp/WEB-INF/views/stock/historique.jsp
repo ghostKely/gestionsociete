@@ -14,17 +14,16 @@
     <nav class="navbar">
         <h2>Stock Menu</h2>
         <ul>
-            <li><a href="${pageContext.request.contextPath}/articles">Liste des articles</a></li>
-            <li><a href="${pageContext.request.contextPath}/mouvements">Historique des mouvements</a></li>
-            <li><a href="#">Initialisation Transfert</a></li>
-            <li><a href="#">Revue final Transfert</a></li>
-            <li><a href="#">Comparaison stock théorique & stock actuel</a></li>
+            <li><a href="${pageContext.request.contextPath}/stock/articles">🛍️ Liste des articles</a></li>
+            <li><a href="${pageContext.request.contextPath}/stock/mouvements">⏳ Historique des mouvements</a></li>
+            <li><a href="${pageContext.request.contextPath}/transfert/transfertpage">🔄 Initialisation Transfert</a></li>
+            
         </ul>
     </nav>
 
     <!-- Right Content -->
     <div class="content-wrapper">
-        <h1>Historique des mouvements</h1>
+        <h1>⏳ Historique des mouvements</h1>
 
         <table>
             <thead>

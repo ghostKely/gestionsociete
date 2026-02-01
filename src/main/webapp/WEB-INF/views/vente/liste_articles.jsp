@@ -79,7 +79,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Liste des Articles - Sélection pour Devis</h1>
+        <h1>🛍️ Liste des articles - Sélection pour Devis</h1>
         
         <c:if test="${not empty message}">
             <div style="background: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
