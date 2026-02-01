@@ -1,5 +1,5 @@
--- CREATE DATABASE vente_tovo;
--- \c vente_tovo;
+CREATE DATABASE vente_tovo;
+\c vente_tovo;
 
 CREATE TABLE role (
     id_role SERIAL PRIMARY KEY,
