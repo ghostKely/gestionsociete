@@ -18,7 +18,7 @@ public class InventaireController {
     private EntityManager entityManager;
 
     // =================== PAGE PRINCIPALE ===================
-    @GetMapping
+    @GetMapping("/pageInventaire")
     @Transactional
     public String pageInventaire(Model model) {
         try {
@@ -75,6 +75,6 @@ public class InventaireController {
             redirectAttributes.addFlashAttribute("error", "Erreur: " + e.getMessage());
         }
 
-        return "redirect:/stock/inventaire";
+        return "redirect:/inventaire/pageInventaire";
     }
 }

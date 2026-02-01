@@ -78,6 +78,8 @@ public class DevisService {
     public Devis creerDevisAvecLignes(Integer idClient, Integer idCommercial,
             LocalDate dateValidite, String notes,
             List<Object[]> lignesDevis) {
+        System.out.println("FONCTION creerDevisAvecLignes");
+        System.out.println("TAILLE DE LIGNE DE DEVIS : " + lignesDevis.size());
         // Récupérer les entités
         Client client = clientRepository.findById(idClient)
                 .orElseThrow(() -> new RuntimeException("Client non trouvé"));
@@ -87,7 +89,7 @@ public class DevisService {
         // Enrichir le commercial avec son rôle
         enrichirAvecRole(commercial);
         // Vérifier les droits
-        if (!"COMMERCIAL".equals(commercial.getRole().getNomRole())) {
+        if (!"COMMERCIAL".equalsIgnoreCase(commercial.getRole().getNomRole())) {
             throw new RuntimeException("Seuls les commerciaux peuvent créer des devis");
         }
 
@@ -100,11 +102,12 @@ public class DevisService {
         devis.setDateValidite(dateValidite);
         devis.setNotes(notes);
         devis.setStatut("A_VALIDER");
-        devis.setCreatedBy(commercial.getIdUtilisateur());
-        devis.setCreatedAt(LocalDateTime.now());
 
         devis.setIdValidateur(null);
         devis.setDateValidation(null);
+        Devis savedDevis = devisRepository.save(devis);
+        Integer devisId = savedDevis.getIdDevis();
+        System.out.println("Devis créé avec ID: " + devisId);
 
         // Ajouter les lignes
         BigDecimal totalHt = BigDecimal.ZERO;
@@ -122,13 +125,14 @@ public class DevisService {
                     .orElseThrow(() -> new RuntimeException("Article non trouvé: " + idArticle));
 
             LigneDevis ligne = new LigneDevis();
-            ligne.setDevis(devis);
+            ligne.setIdDevis(devisId);
+            ligne.setDevis(savedDevis);
             ligne.setArticle(article);
+            ligne.setIdArticle(idArticle);
             ligne.setQuantite(quantite);
             ligne.setPrixUnitaireHt(prixUnitaire);
             ligne.setRemise(remise);
             ligne.setTvaTaux(tvaTaux);
-
             // Calculer les montants
             BigDecimal montantHt = prixUnitaire
                     .multiply(BigDecimal.valueOf(quantite))
@@ -139,7 +143,8 @@ public class DevisService {
             ligne.setMontantHt(montantHt);
             ligne.setMontantTtc(montantHt.add(montantTva));
 
-            lignes.add(ligne);
+            LigneDevis savedLigne = ligneDevisRepository.save(ligne);
+            lignes.add(savedLigne);
             totalHt = totalHt.add(montantHt);
             totalTva = totalTva.add(montantTva);
         }
@@ -233,12 +238,6 @@ public class DevisService {
 
         Devis devis = devisRepository.findById(idDevis)
                 .orElseThrow(() -> new RuntimeException("Devis introuvable"));
-
-        // Séparation des tâches
-        if (devis.getCreatedBy() != null &&
-                devis.getCreatedBy().equals(validateur.getIdUtilisateur())) {
-            throw new RuntimeException("Vous ne pouvez pas valider votre propre devis.");
-        }
 
         // Charger rôle si nécessaire
         enrichirAvecRole(validateur);

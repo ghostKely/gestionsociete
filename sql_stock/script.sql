@@ -1,5 +1,5 @@
-CREATE DATABASE vente_tovo;
-\c vente_tovo;
+-- CREATE DATABASE vente_tovo;
+-- \c vente_tovo;
 
 CREATE TABLE role (
     id_role SERIAL PRIMARY KEY,
@@ -12,8 +12,8 @@ INSERT INTO role (nom_role, niveau_validation) VALUES
 ('Admin', 2),
 ('Responsable Achats', 2),
 ('Acheteur', 1),
-('Magasinier', 0),
-('Commercial', 1),
+('MAGASINIER', 0),
+('COMMERCIAL', 1),
 ('Responsable Ventes', 2),
 ('OPERATEUR', 0),
 ('SUPERVISEUR', 1);
@@ -37,7 +37,7 @@ INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, id_role) VALUES
 ('RAKOTO', 'Jean', 'jean@vente-tovo.mg', 'pass123', 2),
 ('RABE', 'Marie', 'marie@vente-tovo.mg', 'pass123', 3),
 ('RANDRIA', 'Paul', 'paul@vente-tovo.mg', 'pass123', 4),
-('RASOA', 'Sophie', 'sophie@vente-tovo.mg', 'pass123', 5)
+('RASOA', 'Sophie', 'sophie@vente-tovo.mg', 'pass123', 5),
 ('DODA', 'Jean', 'magasinier@vente.com', 'pass123', 4);
 
 INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, id_role)
@@ -590,6 +590,18 @@ AFTER INSERT ON bon_reception
 FOR EACH ROW
 EXECUTE FUNCTION sync_bon_reception_to_stock();
 
+-- Table inventaire
+CREATE TABLE inventaire (
+    id_inventaire SERIAL PRIMARY KEY,
+    date_inventaire TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id_article INT NOT NULL,
+    nbre_article INT NOT NULL CHECK (nbre_article >= 0),
+    commentaire TEXT,
+    id_utilisateur INT NOT NULL,
+    FOREIGN KEY (id_article) REFERENCES article(id_article),
+    FOREIGN KEY (id_utilisateur) REFERENCES utilisateur(id_utilisateur)
+);
+
 
 -- Table pour gérer les transferts entre dépôts
 CREATE TABLE transfert_depot (
@@ -611,9 +623,6 @@ CREATE TABLE transfert_depot (
 
     CONSTRAINT check_depots_differents CHECK (id_depot_source != id_depot_destination)
 );
--- Ajouter une colonne référence dans mouvement_stock
-ALTER TABLE mouvement_stock 
-ADD COLUMN reference VARCHAR(100);
 
 -- MODULE VENTE
 -- CLIENT
@@ -836,3 +845,182 @@ BEFORE INSERT OR UPDATE OF id_commercial
 ON devis
 FOR EACH ROW
 EXECUTE FUNCTION check_commercial_devis();
+
+-- Ligne de livraison CLIENT (détaillée)
+CREATE TABLE ligne_livraison_client_detail (
+    id_ligne_detail SERIAL PRIMARY KEY,
+    id_ligne_livraison INT NOT NULL REFERENCES ligne_livraison_client(id_ligne_livraison) ON DELETE CASCADE,
+    id_article INT NOT NULL REFERENCES article(id_article),
+    quantite INT NOT NULL CHECK (quantite > 0),
+    id_depot INT NOT NULL REFERENCES depot(id_depot)
+);
+
+-- 1. Fonction pour obtenir l'ID du dépôt central
+CREATE OR REPLACE FUNCTION get_depot_central_id()
+RETURNS INTEGER AS $$
+DECLARE
+    v_id_depot INTEGER;
+BEGIN
+    SELECT id_depot INTO v_id_depot
+    FROM depot 
+    WHERE code_depot = 'DEP-ANT-01'
+    LIMIT 1;
+    
+    IF v_id_depot IS NULL THEN
+        RAISE EXCEPTION 'Dépôt central (DEP-ANT-01) non trouvé. Veuillez créer le dépôt central.';
+    END IF;
+    
+    RETURN v_id_depot;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- 2. Fonction pour insérer dans ligne_livraison_client_detail
+CREATE OR REPLACE FUNCTION trg_insert_ligne_livraison_detail()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_id_article INTEGER;
+    v_id_depot_central INTEGER;
+    v_quantite_restante INTEGER;
+    v_quantite_a_livrer INTEGER;
+BEGIN
+    -- Obtenir l'article depuis la ligne de commande
+    SELECT lcc.id_article, 
+           (lcc.quantite_commandee - COALESCE(lcc.quantite_livree, 0))
+    INTO v_id_article, v_quantite_restante
+    FROM ligne_commande_client lcc
+    WHERE lcc.id_ligne_commande = NEW.id_ligne_commande;
+    
+    IF v_id_article IS NULL THEN
+        RAISE EXCEPTION 'Ligne de commande % non trouvée', NEW.id_ligne_commande;
+    END IF;
+    
+    -- Vérifier que la quantité à livrer ne dépasse pas la quantité restante
+    IF NEW.quantite_livree > v_quantite_restante THEN
+        RAISE EXCEPTION 
+            'Quantité à livrer (%) supérieure à la quantité restante (%) pour la ligne de commande %',
+            NEW.quantite_livree, v_quantite_restante, NEW.id_ligne_commande;
+    END IF;
+    
+    -- Obtenir l'ID du dépôt central
+    v_id_depot_central := get_depot_central_id();
+    
+    -- Insérer dans ligne_livraison_client_detail
+    INSERT INTO ligne_livraison_client_detail (
+        id_ligne_livraison,
+        id_article,
+        quantite,
+        id_depot
+    ) VALUES (
+        NEW.id_ligne_livraison,
+        v_id_article,
+        NEW.quantite_livree,
+        v_id_depot_central
+    );
+    
+    -- Mettre à jour la quantité livrée dans ligne_commande_client
+    UPDATE ligne_commande_client 
+    SET quantite_livree = COALESCE(quantite_livree, 0) + NEW.quantite_livree
+    WHERE id_ligne_commande = NEW.id_ligne_commande;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 3. Créer le trigger
+CREATE TRIGGER trg_after_insert_ligne_livraison
+AFTER INSERT ON ligne_livraison_client
+FOR EACH ROW
+EXECUTE FUNCTION trg_insert_ligne_livraison_detail();
+
+
+
+-- Fonction trigger MODIFIÉE (sans colonne reference)
+CREATE OR REPLACE FUNCTION trg_enregistrer_sortie_stock()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_id_methode_article INTEGER;
+    v_prix_article NUMERIC(15,3);
+    v_prix_type VARCHAR(10);
+    v_depot_nom VARCHAR(100);
+BEGIN
+    RAISE NOTICE 'Début trigger sortie stock pour ligne détail ID: %, Article: %, Quantité: %', 
+                 NEW.id_ligne_detail, NEW.id_article, NEW.quantite;
+    
+    -- 1. Récupérer l'ID de la méthode article
+    SELECT ma.id_methode_article
+    INTO v_id_methode_article
+    FROM methode_article ma
+    WHERE ma.id_article = NEW.id_article;
+    
+    IF v_id_methode_article IS NULL THEN
+        RAISE EXCEPTION 'Aucune méthode de calcul de stock définie pour l''article ID %', NEW.id_article;
+    END IF;
+    
+    RAISE NOTICE 'Méthode article trouvée: %', v_id_methode_article;
+    
+    -- 2. Récupérer le prix (priorité: prix VENTE, sinon prix ACHAT)
+    SELECT p.montant, p.type
+    INTO v_prix_article, v_prix_type
+    FROM prix p
+    WHERE p.id_article = NEW.id_article
+      AND p.type = 'VENTE'
+    ORDER BY p.date_prix DESC
+    LIMIT 1;
+    
+    IF v_prix_article IS NULL THEN
+        SELECT p.montant, p.type
+        INTO v_prix_article, v_prix_type
+        FROM prix p
+        WHERE p.id_article = NEW.id_article
+          AND p.type = 'ACHAT'
+        ORDER BY p.date_prix DESC
+        LIMIT 1;
+    END IF;
+    
+    IF v_prix_article IS NULL THEN
+        RAISE EXCEPTION 'Aucun prix trouvé (ni VENTE ni ACHAT) pour l''article ID %', NEW.id_article;
+    END IF;
+    
+    RAISE NOTICE 'Prix trouvé: % (type: %)', v_prix_article, v_prix_type;
+    
+    -- 3. Récupérer le nom du dépôt pour le log
+    SELECT d.nom_depot INTO v_depot_nom
+    FROM depot d
+    WHERE d.id_depot = NEW.id_depot;
+    
+    -- 4. Insérer le mouvement de SORTIE dans mouvement_stock (SANS colonne reference)
+    INSERT INTO mouvement_stock (
+        id_article,
+        quantite_stock,
+        id_methode_article,
+        prix_article,
+        id_depot,
+        mouvement_type
+        -- date_entree_stock est DEFAULT CURRENT_TIMESTAMP, pas besoin de l'inclure
+    ) VALUES (
+        NEW.id_article,
+        NEW.quantite,
+        v_id_methode_article,
+        v_prix_article,
+        NEW.id_depot,
+        'SORTIE'
+    );
+    
+    RAISE NOTICE 'Sortie de stock enregistrée: Article %, Quantité %, Dépôt % (%), Prix %, Type mouvement: SORTIE',
+                 NEW.id_article, NEW.quantite, NEW.id_depot, v_depot_nom, v_prix_article;
+    
+    RETURN NEW;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE EXCEPTION 'Erreur lors de l''enregistrement de la sortie de stock: % (SQLSTATE: %)', 
+                        SQLERRM, SQLSTATE;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Recréer le trigger
+DROP TRIGGER IF EXISTS trg_after_insert_ligne_livraison_client_detail ON ligne_livraison_client_detail;
+CREATE TRIGGER trg_after_insert_ligne_livraison_client_detail
+AFTER INSERT ON ligne_livraison_client_detail
+FOR EACH ROW
+EXECUTE FUNCTION trg_enregistrer_sortie_stock();

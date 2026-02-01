@@ -2,6 +2,7 @@ package com.ventetovo.controller;
 
 import com.ventetovo.entity.Depot;
 import com.ventetovo.entity.Utilisateur;
+import com.ventetovo.entity.VUtilisateurRole;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,6 +13,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
+
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -23,7 +26,7 @@ public class TransfertController {
         private EntityManager entityManager;
 
         // =================== PAGE TRANSFERT ENTRE DEPOTS ===================
-        @GetMapping
+        @GetMapping("/transfertpage")
         @Transactional
         public String pageTransfert(Model model, HttpSession session) {
                 try {
@@ -132,7 +135,6 @@ public class TransfertController {
                 }
         }
 
-        // =================== EFFECTUER UN TRANSFERT ===================
         @PostMapping("/effectuer")
         @Transactional
         public String effectuerTransfert(
@@ -140,154 +142,36 @@ public class TransfertController {
                         @RequestParam("idDepotSource") Integer idDepotSource,
                         @RequestParam("idDepotDestination") Integer idDepotDestination,
                         @RequestParam("quantite") Integer quantite,
+                        @RequestParam("numeroTransfert") String numeroTransfert,
                         @RequestParam(value = "commentaire", required = false) String commentaire,
-                        @RequestParam(value = "numeroTransfert", required = false) String numeroTransfert,
                         HttpSession session,
                         RedirectAttributes redirectAttributes) {
 
+                // CORRECTION: Récupérer l'utilisateur en tant que Utilisateur
+                Utilisateur user = (Utilisateur) session.getAttribute("user");
+                if (user == null) {
+                        return "redirect:/user/login?id=1";
+                }
+
                 try {
-                        // 1. Validation des données
-                        if (idArticle == null || idArticle <= 0) {
-                                redirectAttributes.addFlashAttribute("error", "Veuillez sélectionner un article");
-                                return "redirect:/stock/transfert";
-                        }
+                        // 4. Enregistrer le transfert
+                        String insertTransfertSql = "INSERT INTO transfert_depot (numero_transfert, id_article, " +
+                                        "id_depot_source, id_depot_destination, quantite, commentaire, " +
+                                        "id_utilisateur, date_transfert, statut) " +
+                                        "VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), 'EN_COURS')";
 
-                        if (idDepotSource == null || idDepotDestination == null) {
-                                redirectAttributes.addFlashAttribute("error",
-                                                "Veuillez sélectionner les dépôts source et destination");
-                                return "redirect:/stock/transfert";
-                        }
-
-                        if (idDepotSource.equals(idDepotDestination)) {
-                                redirectAttributes.addFlashAttribute("error",
-                                                "Le dépôt source et destination doivent être différents");
-                                return "redirect:/stock/transfert";
-                        }
-
-                        if (quantite == null || quantite <= 0) {
-                                redirectAttributes.addFlashAttribute("error", "La quantité doit être supérieure à 0");
-                                return "redirect:/stock/transfert";
-                        }
-
-                        // 2. Vérifier le stock disponible
-                        Long stockDisponible = ((Number) entityManager.createNativeQuery(
-                                        "SELECT COALESCE(SUM(quantite_article), 0) " +
-                                                        "FROM vue_stock_actuel " +
-                                                        "WHERE id_article = :articleId AND id_depot = :depotId")
-                                        .setParameter("articleId", idArticle)
-                                        .setParameter("depotId", idDepotSource)
-                                        .getSingleResult()).longValue();
-
-                        if (stockDisponible < quantite) {
-                                redirectAttributes.addFlashAttribute("error",
-                                                "Stock insuffisant dans le dépôt source. Disponible: "
-                                                                + stockDisponible);
-                                return "redirect:/stock/transfert";
-                        }
-
-                        // 3. Générer un numéro de transfert si non fourni
-                        if (numeroTransfert == null || numeroTransfert.isEmpty()) {
-                                Long count = ((Number) entityManager.createNativeQuery(
-                                                "SELECT COUNT(*) FROM transfert_depot")
-                                                .getSingleResult()).longValue();
-
-                                numeroTransfert = "TRANS-" + (count + 1) + "-" +
-                                                String.format("%06d", System.currentTimeMillis() % 1000000);
-                        }
-
-                        // 4. Récupérer l'utilisateur connecté
-                        Integer userId = (Integer) session.getAttribute("userId");
-                        if (userId == null) {
-                                userId = 1; // Utilisateur par défaut
-                        }
-
-                        // 5. Enregistrer le transfert
-                        String sqlInsert = "INSERT INTO transfert_depot (" +
-                                        "numero_transfert, id_article, id_depot_source, id_depot_destination, " +
-                                        "quantite, commentaire, id_utilisateur, date_transfert, statut) " +
-                                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-                        entityManager.createNativeQuery(sqlInsert)
+                        entityManager.createNativeQuery(insertTransfertSql)
                                         .setParameter(1, numeroTransfert)
                                         .setParameter(2, idArticle)
                                         .setParameter(3, idDepotSource)
                                         .setParameter(4, idDepotDestination)
                                         .setParameter(5, quantite)
                                         .setParameter(6, commentaire)
-                                        .setParameter(7, userId)
-                                        .setParameter(8, new Date())
-                                        .setParameter(9, "EN_COURS")
+                                        .setParameter(7, user.getIdUtilisateur())
                                         .executeUpdate();
 
-                        // 6. Créer les mouvements de stock
-                        // Sortie du dépôt source
-                        entityManager.createNativeQuery(
-                                        "INSERT INTO mouvement_stock (" +
-                                                        "id_article, quantite_stock, id_methode_article, prix_article, "
-                                                        +
-                                                        "id_depot, date_entree_stock, mouvement_type, reference) " +
-                                                        "SELECT " +
-                                                        "?, ?, ma.id_methode_article, vs.prix_par_methode, " +
-                                                        "?, NOW(), 'SORTIE', ? " +
-                                                        "FROM vue_stock_actuel vs " +
-                                                        "JOIN methode_article ma ON vs.id_methode_article = ma.id_methode_article "
-                                                        +
-                                                        "WHERE vs.id_article = ? AND vs.id_depot = ? " +
-                                                        "LIMIT 1")
-                                        .setParameter(1, idArticle)
-                                        .setParameter(2, quantite * -1) // Négatif pour sortie
-                                        .setParameter(3, idDepotSource)
-                                        .setParameter(4, numeroTransfert)
-                                        .setParameter(5, idArticle)
-                                        .setParameter(6, idDepotSource)
-                                        .executeUpdate();
-
-                        // Entrée dans le dépôt destination
-                        entityManager.createNativeQuery(
-                                        "INSERT INTO mouvement_stock (" +
-                                                        "id_article, quantite_stock, id_methode_article, prix_article, "
-                                                        +
-                                                        "id_depot, date_entree_stock, mouvement_type, reference) " +
-                                                        "SELECT " +
-                                                        "?, ?, ma.id_methode_article, vs.prix_par_methode, " +
-                                                        "?, NOW(), 'ENTREE', ? " +
-                                                        "FROM vue_stock_actuel vs " +
-                                                        "JOIN methode_article ma ON vs.id_methode_article = ma.id_methode_article "
-                                                        +
-                                                        "WHERE vs.id_article = ? AND vs.id_depot = ? " +
-                                                        "LIMIT 1")
-                                        .setParameter(1, idArticle)
-                                        .setParameter(2, quantite)
-                                        .setParameter(3, idDepotDestination)
-                                        .setParameter(4, numeroTransfert)
-                                        .setParameter(5, idArticle)
-                                        .setParameter(6, idDepotSource)
-                                        .executeUpdate();
-
-                        // 7. Récupérer les infos pour le message
-                        List<Object[]> infos = entityManager.createNativeQuery(
-                                        "SELECT a.code, a.designation, d1.nom_depot, d2.nom_depot " +
-                                                        "FROM article a " +
-                                                        "JOIN depot d1 ON d1.id_depot = ? " +
-                                                        "JOIN depot d2 ON d2.id_depot = ? " +
-                                                        "WHERE a.id_article = ?")
-                                        .setParameter(1, idDepotSource)
-                                        .setParameter(2, idDepotDestination)
-                                        .setParameter(3, idArticle)
-                                        .getResultList();
-
-                        String message = "Transfert effectué avec succès !";
-                        if (!infos.isEmpty()) {
-                                String code = (String) infos.get(0)[0];
-                                String designation = (String) infos.get(0)[1];
-                                String source = (String) infos.get(0)[2];
-                                String destination = (String) infos.get(0)[3];
-
-                                message = "Transfert " + numeroTransfert + " : " + quantite + " x " +
-                                                code + " - " + designation + " de " + source + " vers " + destination;
-                        }
-
-                        redirectAttributes.addFlashAttribute("message", message);
+                        redirectAttributes.addFlashAttribute("message",
+                                        "Transfert " + numeroTransfert + " effectué avec succès !");
 
                 } catch (Exception e) {
                         e.printStackTrace();
@@ -295,7 +179,7 @@ public class TransfertController {
                                         "Erreur lors du transfert: " + e.getMessage());
                 }
 
-                return "redirect:/stock/transfert";
+                return "redirect:/transfert/transfertpage";
         }
 
         // =================== HISTORIQUE DES TRANSFERTS ===================

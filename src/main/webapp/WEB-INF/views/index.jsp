@@ -295,7 +295,7 @@
                         <li><i class="fas fa-check-circle"></i> Suivi des paiements</li>
                         <li><i class="fas fa-check-circle"></i> Statistiques de vente</li>
                     </ul>
-                    <button class="btn-access" onclick="accessModule('vente')">Accéder au Module Vente</button>
+                    <a href="${pageContext.request.contextPath}/user/login?id=1" class="btn-access">Accéder au Module Vente</a>
                 </div>
             </div>
             

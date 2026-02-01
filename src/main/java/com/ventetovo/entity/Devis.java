@@ -1,15 +1,19 @@
 package com.ventetovo.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -50,12 +54,6 @@ public class Devis {
     @Column(name = "notes")
     private String notes;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "created_by")
-    private Integer createdBy;
-
     @Column(name = "id_validateur")
     private Integer idValidateur;
 
@@ -88,7 +86,7 @@ public class Devis {
     @Transient
     private Utilisateur createdByUser;
 
-    @Transient
+    @OneToMany(mappedBy = "devis", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<LigneDevis> lignes;
 
     // Constructeurs
@@ -217,22 +215,6 @@ public class Devis {
     // public void setCommercial(Utilisateur commercial) { this.commercial =
     // commercial; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Integer getCreatedBy() {
-        return createdBy;
-    }
-
-    public void setCreatedBy(Integer createdBy) {
-        this.createdBy = createdBy;
-    }
-
     public Utilisateur getCreatedByUser() {
         return createdByUser;
     }
@@ -249,4 +231,12 @@ public class Devis {
         this.lignes = lignes;
     }
 
+    // Méthode helper pour gérer la relation bidirectionnelle
+    public void addLigne(LigneDevis ligne) {
+        if (lignes == null) {
+            lignes = new ArrayList<>();
+        }
+        ligne.setDevis(this);
+        lignes.add(ligne);
+    }
 }

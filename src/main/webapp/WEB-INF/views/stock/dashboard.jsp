@@ -13,10 +13,10 @@
     <nav class="navbar">
         <h2>Stock Menu</h2>
         <ul>
-            <li><a href="${pageContext.request.contextPath}/inventaire">📦 Inventaire</a></li>
-            <li><a href="${pageContext.request.contextPath}/articles">Liste des articles</a></li>
-            <li><a href="${pageContext.request.contextPath}/mouvements">Historique des mouvements</a></li>
-            <li><a href="${pageContext.request.contextPath}/transfert">🔄 Initialisation Transfert</a></li>
+            <li><a href="${pageContext.request.contextPath}/inventaire/pageInventaire">📦 Inventaire</a></li>
+            <li><a href="${pageContext.request.contextPath}/stock/articles">Liste des articles</a></li>
+            <li><a href="${pageContext.request.contextPath}/stock/mouvements">Historique des mouvements</a></li>
+            <li><a href="${pageContext.request.contextPath}/transfert/transfertpage">🔄 Initialisation Transfert</a></li>
             <li><a href="#">Revue final Transfert</a></li>
             <li><a href="#">Comparaison stock théorique & stock actuel</a></li>
         </ul>

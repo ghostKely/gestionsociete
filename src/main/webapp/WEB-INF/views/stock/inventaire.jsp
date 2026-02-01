@@ -15,9 +15,9 @@
         <div class="navbar">
             <h2>📊 Menu Inventaire</h2>
             <ul>
-                <li><a href="${pageContext.request.contextPath}/inventaire">📝 Nouvel Inventaire</a></li>
+                <li><a href="${pageContext.request.contextPath}/inventaire/pageInventaire">📝 Nouvel Inventaire</a></li>
                 <li><a href="${pageContext.request.contextPath}/inventaire/historique">📋 Historique</a></li>
-                <li><a href="${pageContext.request.contextPath}/dashboard">🏠 Dashboard</a></li>
+                <li><a href="${pageContext.request.contextPath}/stock/dashboard">🏠 Dashboard</a></li>
             <li><a href="${pageContext.request.contextPath}/transfert">🔄 Initialisation Transfert</a></li>
                 <li><a href="${pageContext.request.contextPath}/articles">Liste des articles</a></li>
                 <li><a href="${pageContext.request.contextPath}/mouvements">Historique des mouvements</a></li>

@@ -17,6 +17,21 @@ INSERT INTO prix (id_article, id_fournisseur, type, montant, date_prix) VALUES
 (2, 2, 'ACHAT', 750, '2026-01-12'),  -- Grossiste B
 (2, 3, 'ACHAT', 780, '2026-01-12');  -- Grossiste C
 
+INSERT INTO prix (id_article, id_fournisseur, type, montant, date_prix) VALUES
+(1, 1, 'VENTE', 1500, '2026-01-12'),  -- Grossiste A
+(1, 2, 'VENTE', 2700, '2026-01-12'),  -- Grossiste B
+(1, 3, 'VENTE', 4400, '2026-01-12');  -- Grossiste C
+
+-- Pour l'article 2 (Sucre) - Prix de vente
+INSERT INTO prix (id_article, id_fournisseur, type, montant, date_prix) VALUES
+(2, 1, 'VENTE', 1200, '2026-01-12'),  -- Grossiste A
+(2, 2, 'VENTE', 1500, '2026-01-12'),  -- Grossiste B
+(2, 3, 'VENTE', 1800, '2026-01-12');  -- Grossiste C
+
+UPDATE role SET nom_role = 'COMMERCIAL' WHERE id_role = 5;
+UPDATE role SET nom_role = 'MAGASINIER' WHERE id_role = 4;
+UPDATE role SET nom_role = 'ADMIN' WHERE id_role = 1;
+
 INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, id_role) 
 SELECT 'Rakoto', 'Jean', 'jean.rakoto@company.mg', 'jean', r.id_role
 FROM role r WHERE r.nom_role = 'OPERATEUR';
@@ -42,3 +57,19 @@ VALUES (1, 2);
 INSERT INTO methode_article (id_article, id_methode)
 VALUES (2, 2);
 
+--------------------------------------------------
+INSERT INTO client (code_client, nom)
+VALUES
+('CLI-001', 'Client Test');
+
+-- Insertion du Dépôt Central Antananarivo (existant dans votre script)
+INSERT INTO depot (code_depot, nom_depot, id_site, adresse, responsable_id)
+SELECT
+    'DEP-ANT-02',
+    'Dépôt Tanjombato',
+    s.id_site,
+    'Zone industrielle Antananarivo, Lot IVD 67',
+    u.id_utilisateur
+FROM site s
+JOIN utilisateur u ON u.email = 'marie.rasoa@company.mg'
+WHERE s.code_site = 'SITE-ANT-001';
