@@ -73,16 +73,38 @@ public class AchatController {
     }
 
     @PostMapping("/achat/quantite")
-    public String quantite(@RequestParam("idArticle") Integer idArticle,
+    public String quantite(@RequestParam("idArticle") String idArticleStr,
             @RequestParam("quantite") Integer quantite,
             Model model) {
+        System.out.println("=== DEBUG QUANTITE POST ===");
+        System.out.println("idArticleStr reçu: '" + idArticleStr + "'");
+        System.out.println(
+                "Type de idArticleStr: " + (idArticleStr != null ? idArticleStr.getClass().getName() : "null"));
+        System.out.println("Quantite reçue: " + quantite);
+        // Convertir l'idArticle en Integer
+        Integer idArticle = null;
+        try {
+            System.out.println("Tentative de conversion de idArticleStr...");
+            idArticle = Integer.parseInt(idArticleStr);
+            System.out.println("Conversion réussie: idArticle = " + idArticle);
+        } catch (NumberFormatException e) {
+            System.out.println("ERREUR de conversion: " + e.getMessage());
+            System.out.println("idArticleStr = '" + idArticleStr + "'");
+            model.addAttribute("error", "ID d'article invalide: '" + idArticleStr + "'");
+            return "achat/quantite";
+        }
 
+        System.out.println("Création des proformas pour idArticle: " + idArticle + ", quantite: " + quantite);
         // Créer les proformas pour cette demande
         List<com.ventetovo.entity.Proforma> proformas = proformaService.creerProformasPourDemande(idArticle, quantite);
 
         if (!proformas.isEmpty()) {
             // Récupérer le token de la première proforma (toutes ont le même token)
             String tokenDemande = proformas.get(0).getTokenDemande();
+
+            System.out.println("Proformas créées avec succès:");
+            System.out.println("Nombre de proformas: " + proformas.size());
+            System.out.println("Token demande: " + tokenDemande);
 
             // Ajouter les informations au modèle
             model.addAttribute("proformas", proformas);

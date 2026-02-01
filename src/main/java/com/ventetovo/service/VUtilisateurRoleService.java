@@ -27,11 +27,12 @@ public class VUtilisateurRoleService {
         return vUtilisateurRoleRepository.findByEmail(email);
     }
 
-    public List<VUtilisateurRole> findByActifTrue() {
+    public List<VUtilisateurRole> findCommerciauxActifs() {
         return vUtilisateurRoleRepository.findAll()
                 .stream()
                 .filter(u -> Boolean.TRUE.equals(u.getActif()))
-                .filter(u -> u.getNomRole() != null) // Filtrer les utilisateurs sans rôle
+                .filter(u -> u.getNomRole() != null)
+                .filter(u -> "COMMERCIAL".equalsIgnoreCase(u.getNomRole()))
                 .toList();
     }
 }

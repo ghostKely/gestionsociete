@@ -189,7 +189,6 @@ CREATE TABLE methode_article(
     id_methode_article SERIAL PRIMARY KEY,
     id_article INT NOT NULL,
     id_methode INT NOT NULL,
-
     FOREIGN KEY (id_article) REFERENCES article(id_article),
     FOREIGN KEY (id_methode) REFERENCES methode_calcul_stock(id_methode)
 );
@@ -234,7 +233,6 @@ CREATE TABLE mouvement_stock(
     id_depot INT NOT NULL,
     date_entree_stock TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     mouvement_type VARCHAR(20) NOT NULL DEFAULT 'ENTREE', -- e.g., ENTREE, SORTIE
-
     FOREIGN KEY (id_article) REFERENCES article(id_article),
     FOREIGN KEY (id_depot) REFERENCES depot(id_depot),
     FOREIGN KEY (id_methode_article) REFERENCES methode_article(id_methode_article)
@@ -687,3 +685,6 @@ SELECT
 FROM site s
 JOIN utilisateur u ON u.email = 'marie.rasoa@company.mg'
 WHERE s.code_site = 'SITE-ANT-001';
+
+INSERT INTO methode_article (id_article, methode_calcul)
+VALUES (5, 'FIFO');

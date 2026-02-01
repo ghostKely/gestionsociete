@@ -33,6 +33,11 @@ public class LoginStockController {
         this.roleService = roleService;
     }
 
+    @GetMapping("/stock/login_stock")
+    public String loginStock() {
+        return "stock/login_stock";
+    }
+
     @PostMapping("/login")
     public String login(
             @RequestParam("username") String username,
@@ -43,7 +48,7 @@ public class LoginStockController {
 
         if (user == null) {
             model.addAttribute("error", "Nom d'utilisateur ou mot de passe incorrect");
-            return "login_stock";
+            return "stock/login_stock";
         }
 
         session.setAttribute("user", user);
@@ -60,9 +65,9 @@ public class LoginStockController {
             List<StockActuel> stockList = stockService.getAllCurrentStock();
             model.addAttribute("stockList", stockList);
 
-            return "dashboard";
+            return "stock/dashboard";
         } else {
-            return "operateur";
+            return "stock/operateur";
         }
     }
 
@@ -70,7 +75,7 @@ public class LoginStockController {
     public String listArticles(HttpSession session, Model model) {
         Utilisateur user = (Utilisateur) session.getAttribute("user");
         if (user == null) {
-            return "redirect:/login_stock"; // redirect to login if not logged in
+            return "redirect:/stock/login_stock"; // redirect to login if not logged in
         }
 
         // Fetch stock list

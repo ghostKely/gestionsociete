@@ -2,6 +2,8 @@ package com.ventetovo.entity;
 
 import jakarta.persistence.*;
 
+import jakarta.persistence.Entity;
+
 @Entity
 @Table(name = "depot")
 public class Depot {

@@ -18,7 +18,7 @@ public class InventaireController {
     private EntityManager entityManager;
 
     // =================== PAGE PRINCIPALE ===================
-    @GetMapping
+    @GetMapping("/pageInventaire")
     @Transactional
     public String pageInventaire(Model model) {
         try {
@@ -44,7 +44,7 @@ public class InventaireController {
             model.addAttribute("error", "Erreur de base de données");
         }
 
-        return "inventaire";
+        return "stock/inventaire";
     }
 
     // =================== AJOUTER UN INVENTAIRE (ULTRA SIMPLE) ===================
@@ -75,6 +75,6 @@ public class InventaireController {
             redirectAttributes.addFlashAttribute("error", "Erreur: " + e.getMessage());
         }
 
-        return "redirect:/inventaire";
+        return "redirect:/inventaire/pageInventaire";
     }
 }

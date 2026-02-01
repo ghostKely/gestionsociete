@@ -160,7 +160,6 @@ public class VentesController {
 
         for (Integer id : selectedIds) {
             articleService.findById(id).ifPresent(a -> {
-                // Ne pas ajouter les articles avec des propriétés critiques null
                 if (a.getIdArticle() != null && (a.getDesignation() != null || a.getCode() != null)) {
                     selectedArticlesList.add(a);
                     prixService.findDernierPrixVente(a.getIdArticle())
@@ -171,7 +170,6 @@ public class VentesController {
         }
 
         List<Client> clients = clientService.findAll();
-        // Filtrer les clients pour éviter les valeurs null
         clients = clients.stream()
                 .filter(c -> c.getIdClient() != null && (c.getNom() != null || c.getCodeClient() != null))
                 .collect(Collectors.toList());
@@ -181,17 +179,27 @@ public class VentesController {
         model.addAttribute("unitPrices", unitPrices);
         model.addAttribute("utilisateur", user);
 
-        boolean isCommercial = "COMMERCIAL".equals(user.getNomRole());
-
+        boolean isCommercial = "COMMERCIAL".equalsIgnoreCase(user.getNomRole());
         model.addAttribute("isCommercial", isCommercial);
 
+        // DEBUG : Ajouter des logs pour comprendre
+        System.out.println("=== DEBUG - CRÉATION DEVIS ===");
+        System.out.println("Utilisateur connecté: " + user.getNom() + " - Rôle: " + user.getNomRole());
+        System.out.println("Est commercial: " + isCommercial);
+
         if (!isCommercial) {
-            List<VUtilisateurRole> commerciaux = vUtilisateurRoleService.findByActifTrue()
-                    .stream()
-                    .filter(u -> "COMMERCIAL".equals(u.getNomRole()))
-                    .filter(u -> u.getIdUtilisateur() != null && u.getNom() != null && u.getPrenom() != null
-                            && u.getEmail() != null)
-                    .collect(Collectors.toList());
+            // UTILISEZ LA NOUVELLE MÉTHODE
+            List<VUtilisateurRole> commerciaux = vUtilisateurRoleService.findCommerciauxActifs();
+
+            // Ajoutez des logs de débogage
+            System.out.println("Nombre de commerciaux trouvés: " + commerciaux.size());
+
+            for (VUtilisateurRole comm : commerciaux) {
+                System.out.println("Commercial: " + comm.getNom() + " " + comm.getPrenom() +
+                        " - Email: " + comm.getEmail() +
+                        " - Actif: " + comm.getActif() +
+                        " - Rôle: " + comm.getNomRole());
+            }
 
             model.addAttribute("commerciaux", commerciaux);
         }
@@ -222,7 +230,7 @@ public class VentesController {
 
             // ✅ Détermination du commercial
             Integer commercialId;
-            if ("COMMERCIAL".equals(user.getNomRole())) {
+            if ("COMMERCIAL".equalsIgnoreCase(user.getNomRole())) {
                 commercialId = user.getIdUtilisateur();
             } else {
                 if (idCommercial == null) {
@@ -269,7 +277,7 @@ public class VentesController {
             if (lignes.isEmpty()) {
                 throw new RuntimeException("Aucune ligne de devis valide");
             }
-
+            System.out.println("TAILLE OBJET creerDevis controller vente : " + lignes.size());
             // ✅ Date de validité par défaut : 30 jours
             LocalDate dateValidite = LocalDate.now().plusDays(30);
             String notes = request.getParameter("notes");

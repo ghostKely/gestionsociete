@@ -295,7 +295,7 @@
                         <li><i class="fas fa-check-circle"></i> Suivi des paiements</li>
                         <li><i class="fas fa-check-circle"></i> Statistiques de vente</li>
                     </ul>
-                    <button class="btn-access" onclick="accessModule('vente')">Accéder au Module Vente</button>
+                    <a href="${pageContext.request.contextPath}/user/login?id=1" class="btn-access">Accéder au Module Vente</a>
                 </div>
             </div>
             
@@ -317,7 +317,7 @@
                         <li><i class="fas fa-check-circle"></i> Alertes de réapprovisionnement</li>
                         <li><i class="fas fa-check-circle"></i> Gestion des emplacements</li>
                     </ul>
-                    <button class="btn-access" onclick="accessModule('stock')">Accéder au Module Stock</button>
+                    <a href="${pageContext.request.contextPath}/stock/login_stock" class="btn-access">Accéder au Module Stock</a>
                 </div>
             </div>
         </div>
