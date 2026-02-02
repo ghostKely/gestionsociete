@@ -106,6 +106,74 @@ public class DashboardApiController {
         return out;
     }
 
+    @GetMapping("/vente/pie")
+    public Map<String, Object> ventePieCharts() {
+        Map<String, Object> out = new HashMap<>();
+
+        List<FactureClient> factures = factureClientService.findAll();
+
+        // Invoices by status (PIE CHART)
+        Map<String, Long> byStatus = factures.stream()
+                .filter(f -> f.getStatut() != null)
+                .collect(Collectors.groupingBy(FactureClient::getStatut, Collectors.counting()));
+
+        out.put("invoiceStatusLabels", new ArrayList<>(byStatus.keySet()));
+        out.put("invoiceStatusValues", new ArrayList<>(byStatus.values()));
+
+        return out;
+    }
+
+    @GetMapping("/vente/charts")
+    public Map<String, Object> venteOtherCharts() {
+        Map<String, Object> out = new HashMap<>();
+
+        List<FactureClient> factures = factureClientService.findAll();
+
+        // Sales by month (LINE CHART)
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM");
+        Map<String, BigDecimal> salesByMonth = new TreeMap<>();
+        for (FactureClient f : factures) {
+            if (f.getDateFacture() == null || f.getMontantTtc() == null)
+                continue;
+            String m = f.getDateFacture().format(fmt);
+            salesByMonth.putIfAbsent(m, BigDecimal.ZERO);
+            salesByMonth.put(m, salesByMonth.get(m).add(f.getMontantTtc()));
+        }
+
+        out.put("salesLabels", new ArrayList<>(salesByMonth.keySet()));
+        out.put("salesValues", salesByMonth.values().stream().map(BigDecimal::doubleValue).collect(Collectors.toList()));
+
+        // Top articles by quantity (BAR CHART)
+        List<LigneCommandeClient> lignes = ligneCommandeClientService.findAll();
+        Map<Integer, Integer> qtyByArticle = new HashMap<>();
+        for (LigneCommandeClient l : lignes) {
+            if (l.getIdArticle() == null)
+                continue;
+            qtyByArticle.put(l.getIdArticle(), qtyByArticle.getOrDefault(l.getIdArticle(), 0) + (l.getQuantiteCommandee() != null ? l.getQuantiteCommandee() : 0));
+        }
+        List<Map.Entry<Integer, Integer>> top = qtyByArticle.entrySet().stream()
+                .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
+                .limit(8)
+                .collect(Collectors.toList());
+
+        List<String> topArticleLabels = new ArrayList<>();
+        List<Integer> topArticleValues = new ArrayList<>();
+        for (Map.Entry<Integer, Integer> e : top) {
+            Integer aid = e.getKey();
+            Integer qty = e.getValue();
+            String name = articleRepository.findById(aid)
+                    .map(a -> a.getDesignation() != null ? a.getDesignation() : "#" + aid)
+                    .orElse("#" + aid);
+            topArticleLabels.add(name);
+            topArticleValues.add(qty);
+        }
+
+        out.put("topArticleLabels", topArticleLabels);
+        out.put("topArticleValues", topArticleValues);
+
+        return out;
+    }
+
     @GetMapping("/stock")
     public Map<String, Object> stockSummary() {
         Map<String, Object> out = new HashMap<>();
@@ -130,6 +198,51 @@ public class DashboardApiController {
 
         out.put("depotLabels", new ArrayList<>(qtyByDepot.keySet()));
         out.put("depotValues", new ArrayList<>(qtyByDepot.values()));
+
+        return out;
+    }
+
+    @GetMapping("/stock/pie")
+    public Map<String, Object> stockPieCharts() {
+        Map<String, Object> out = new HashMap<>();
+
+        List<StockActuel> stocks = stockService.getAllCurrentStock();
+
+        // Répartition par dépôt (PIE CHART)
+        Map<String, Double> qtyByDepot = new HashMap<>();
+        for (StockActuel s : stocks) {
+            String depot = s.getDepot() != null && s.getDepot().getNomDepot() != null ? s.getDepot().getNomDepot() : "Dépôt-?";
+            double q = s.getQuantiteArticle() != null ? s.getQuantiteArticle().doubleValue() : 0.0;
+            qtyByDepot.put(depot, qtyByDepot.getOrDefault(depot, 0.0) + q);
+        }
+
+        out.put("depotLabels", new ArrayList<>(qtyByDepot.keySet()));
+        out.put("depotValues", new ArrayList<>(qtyByDepot.values()));
+
+        return out;
+    }
+
+    @GetMapping("/stock/charts")
+    public Map<String, Object> stockOtherCharts() {
+        Map<String, Object> out = new HashMap<>();
+
+        List<StockActuel> stocks = stockService.getAllCurrentStock();
+
+        // Top articles by quantity (BAR CHART)
+        Map<String, Double> qtyByArticle = new HashMap<>();
+        for (StockActuel s : stocks) {
+            String art = s.getArticle() != null && s.getArticle().getDesignation() != null ? s.getArticle().getDesignation() : "Article-" + (s.getArticle() != null ? s.getArticle().getIdArticle() : "?");
+            double q = s.getQuantiteArticle() != null ? s.getQuantiteArticle().doubleValue() : 0.0;
+            qtyByArticle.put(art, qtyByArticle.getOrDefault(art, 0.0) + q);
+        }
+
+        List<Map.Entry<String, Double>> topArts = qtyByArticle.entrySet().stream()
+                .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
+                .limit(8)
+                .collect(Collectors.toList());
+        
+        out.put("topArticleLabels", topArts.stream().map(Map.Entry::getKey).collect(Collectors.toList()));
+        out.put("topArticleValues", topArts.stream().map(e -> e.getValue()).collect(Collectors.toList()));
 
         return out;
     }
@@ -160,6 +273,53 @@ public class DashboardApiController {
         List<Map.Entry<String, Double>> topF = montantByFourn.entrySet().stream().sorted((a, b) -> Double.compare(b.getValue(), a.getValue())).limit(8).collect(Collectors.toList());
         out.put("topFournLabels", topF.stream().map(Map.Entry::getKey).collect(Collectors.toList()));
         out.put("topFournValues", topF.stream().map(Map.Entry::getValue).collect(Collectors.toList()));
+
+        return out;
+    }
+
+    @GetMapping("/achat/pie")
+    public Map<String, Object> achatPieCharts() {
+        Map<String, Object> out = new HashMap<>();
+
+        List<FactureFournisseur> factures = factureFournisseurService.findAll();
+
+        // Répartition par fournisseur (PIE CHART)
+        Map<String, Double> montantByFourn = new HashMap<>();
+        for (FactureFournisseur f : factures) {
+            String fournisseurName = "Inconnu";
+            if (f.getBonCommande() != null && f.getBonCommande().getProforma() != null && f.getBonCommande().getProforma().getFournisseur() != null) {
+                fournisseurName = f.getBonCommande().getProforma().getFournisseur().getNom();
+            }
+            montantByFourn.put(fournisseurName, montantByFourn.getOrDefault(fournisseurName, 0.0) + (f.getMontantTotal() != null ? f.getMontantTotal() : 0.0));
+        }
+
+        List<Map.Entry<String, Double>> topF = montantByFourn.entrySet().stream()
+                .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
+                .limit(8)
+                .collect(Collectors.toList());
+        
+        out.put("topFournLabels", topF.stream().map(Map.Entry::getKey).collect(Collectors.toList()));
+        out.put("topFournValues", topF.stream().map(Map.Entry::getValue).collect(Collectors.toList()));
+
+        return out;
+    }
+
+    @GetMapping("/achat/charts")
+    public Map<String, Object> achatOtherCharts() {
+        Map<String, Object> out = new HashMap<>();
+
+        List<BonCommande> bcs = bonCommandeService.findAll();
+        List<FactureFournisseur> factures = factureFournisseurService.findAll();
+
+        // Statistiques générales
+        out.put("nbBonCommandes", bcs.size());
+        out.put("nbFacturesFournisseurs", factures.size());
+
+        double totalMontant = factures.stream()
+                .filter(Objects::nonNull)
+                .mapToDouble(f -> f.getMontantTotal() != null ? f.getMontantTotal() : 0.0)
+                .sum();
+        out.put("totalMontantAchats", totalMontant);
 
         return out;
     }
