@@ -52,6 +52,24 @@
                 </div>
             </div>
 
+            <!-- Power BI Dashboard -->
+            <div class="powerbi-section" style="margin-top: 40px;">
+                <h2 style="color: #d35400;">📊 Analyse Power BI - Module Vente</h2>
+                <div class="powerbi-container" style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px;">
+                    <iframe 
+                        title="Dashboard Vente" 
+                        width="100%" 
+                        height="600" 
+                        src="YOUR_POWERBI_EMBED_URL_VENTE" 
+                        frameborder="0" 
+                        allowFullScreen="true">
+                    </iframe>
+                    <p style="color: #888; font-size: 12px; margin-top: 10px; text-align: center;">
+                        <em>Remplacez YOUR_POWERBI_EMBED_URL_VENTE par l'URL d'intégration de votre rapport Power BI</em>
+                    </p>
+                </div>
+            </div>
+
             <!-- Menu Fonctionnalités -->
             <h2 style="color: #d35400; margin-top: 40px;">Fonctionnalités du Module</h2>
             <div class="dashboard-cards">
