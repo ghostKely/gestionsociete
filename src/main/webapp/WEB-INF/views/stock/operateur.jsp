@@ -13,16 +13,15 @@
     <nav class="navbar">
         <h2>Stock Menu</h2>
         <ul>
-            <li><a href="#">Transfert physique</a></li>
-            <li><a href="#">Inventaire</a></li>
+            <li><a href="${pageContext.request.contextPath}/inventaire/pageInventaire">📦 Inventaire</a></li>
+            <li><a href="${pageContext.request.contextPath}/stock/articles">🛍️ Liste des articles</a></li>
+            <li><a href="${pageContext.request.contextPath}/transfert/transfertpage">🔄 Initialisation Transfert</a></li>
         </ul>
     </nav>
 
     <!-- Right Content -->
     <div class="content-wrapper">
-        <h1>Mouvement Stock Calcul</h1>
-
-        
+        <h1>Welcome Opérateur</h1>
     </div>
 </div>
 </body>

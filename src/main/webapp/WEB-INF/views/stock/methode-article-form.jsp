@@ -54,34 +54,40 @@
 
     <!-- Right Content -->
     <div class="content-wrapper">
-        <h1>Mouvement Stock Calculé</h1>
 
-        <table>
-            <thead>
-            <tr>
-                <th>Dépôt</th>
-                <th>Méthode Article</th>
-                <th>Article</th>
-                <th>Quantité</th>
-                <th>Prix Total</th>
-                <th>Prix par Méthode</th>
-                <th>Date Mouvement</th>
-            </tr>
-            </thead>
-            <tbody>
-            <c:forEach var="stock" items="${stockList}">
-                <tr>
-                    <td>${stock.depot.nomDepot}</td>
-                    <td>${stock.methodeArticle.methode.nomMethode}</td>
-                    <td>${stock.article.designation}</td>
-                    <td>${stock.quantiteArticle}</td>
-                    <td>${stock.prixTotal}</td>
-                    <td>${stock.prixParMethode}</td>
-                    <td>${stock.dateMouvement}</td>
-                </tr>
-            </c:forEach>
-            </tbody>
-        </table>
+        <h2>Assign method to article</h2>
+
+        <form action="${pageContext.request.contextPath}/methode-article/save" method="post">
+
+            <!-- Article -->
+            <label>Article</label>
+            <select name="articleId" required>
+                <option value="">-- Select article --</option>
+                <c:forEach items="${articles}" var="a">
+                    <option value="${a.idArticle}">
+                        ${a.code} - ${a.designation}
+                    </option>
+                </c:forEach>
+            </select>
+
+            <br><br>
+
+            <!-- Methode -->
+            <label>Methode de calcul</label>
+            <select name="methodeId" required>
+                <option value="">-- Select methode --</option>
+                <c:forEach items="${methodes}" var="m">
+                    <option value="${m.id}">
+                        ${m.nomMethode}
+                    </option>
+                </c:forEach>
+            </select>
+
+            <br><br>
+
+            <button type="submit">Save</button>
+        </form>
+
     </div>
 </div>
 </body>
