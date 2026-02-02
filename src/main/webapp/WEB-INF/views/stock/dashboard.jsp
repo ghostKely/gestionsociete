@@ -56,22 +56,48 @@
     <div class="content-wrapper">
         <h1>Mouvement Stock Calculé</h1>
 
-        <!-- Power BI Dashboard -->
-        <div class="powerbi-section" style="margin-bottom: 40px;">
-            <h2 style="color: #2874A6;">📊 Analyse Power BI - Module Stock</h2>
-            <div class="powerbi-container" style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px;">
-                <iframe 
-                    title="Dashboard Stock" 
-                    width="100%" 
-                    height="600" 
-                    src="YOUR_POWERBI_EMBED_URL_STOCK" 
-                    frameborder="0" 
-                    allowFullScreen="true">
-                </iframe>
-                <p style="color: #888; font-size: 12px; margin-top: 10px; text-align: center;">
-                    <em>Remplacez YOUR_POWERBI_EMBED_URL_STOCK par l'URL d'intégration de votre rapport Power BI</em>
-                </p>
+        <!-- Graphiques (Chart.js) -->
+        <div class="charts-section" style="margin-bottom: 40px;">
+            <h2 style="color: #2874A6;">📊 Visualisations - Module Stock</h2>
+            <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:16px;">
+                <div style="flex:1 1 600px; background:#fff; padding:12px; border-radius:8px;">
+                    <h3 style="margin:6px 0 12px 0;">Top articles en stock (quantité)</h3>
+                    <canvas id="stockTopArticles"></canvas>
+                </div>
+
+                <div style="width:360px; background:#fff; padding:12px; border-radius:8px;">
+                    <h3 style="margin:6px 0 12px 0;">Répartition par dépôt</h3>
+                    <canvas id="depotPie"></canvas>
+                </div>
             </div>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+                (function(){
+                    fetch('${pageContext.request.contextPath}/api/dashboard/stock')
+                    .then(r => r.json())
+                    .then(data => {
+                        // Top articles
+                        const topCtx = document.getElementById('stockTopArticles').getContext('2d');
+                        new Chart(topCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: data.topArticleLabels || [],
+                                datasets: [{ label: 'Quantité', data: data.topArticleValues || [], backgroundColor: 'rgba(75,192,192,0.6)' }]
+                            },
+                            options: { responsive:true, maintainAspectRatio:false }
+                        });
+
+                        // Depot pie
+                        const depotCtx = document.getElementById('depotPie').getContext('2d');
+                        new Chart(depotCtx, {
+                            type: 'pie',
+                            data: { labels: data.depotLabels || [], datasets: [{ data: data.depotValues || [], backgroundColor: ['#36a2eb','#ff6384','#ffcd56','#4bc0c0'] }] },
+                            options: { responsive:true, maintainAspectRatio:false }
+                        });
+                    })
+                    .catch(err => console.error('Erreur chargement données dashboard stock', err));
+                })();
+            </script>
         </div>
 
         <table>
