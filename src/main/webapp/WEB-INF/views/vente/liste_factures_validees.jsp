@@ -4,6 +4,7 @@
 <html>
 <head>
     <title>Factures Validées</title>
+    <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/vente.css">
 </head>
 <body>
 
