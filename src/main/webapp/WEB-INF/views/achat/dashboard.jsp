@@ -85,22 +85,38 @@
                 </div>
             </div>
 
-            <!-- Power BI Dashboard -->
-            <div class="powerbi-section" style="margin-top: 40px;">
-                <h2 style="color: #764ba2;">📊 Analyse Power BI - Module Achat</h2>
-                <div class="powerbi-container" style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px;">
-                    <iframe 
-                        title="Dashboard Achat" 
-                        width="100%" 
-                        height="600" 
-                        src="YOUR_POWERBI_EMBED_URL_ACHAT" 
-                        frameborder="0" 
-                        allowFullScreen="true">
-                    </iframe>
-                    <p style="color: #888; font-size: 12px; margin-top: 10px; text-align: center;">
-                        <em>Remplacez YOUR_POWERBI_EMBED_URL_ACHAT par l'URL d'intégration de votre rapport Power BI</em>
-                    </p>
+            <!-- Graphiques (Chart.js) -->
+            <div class="charts-section" style="margin-top: 40px;">
+                <h2 style="color: #764ba2;">📊 Visualisations - Module Achat</h2>
+                <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:16px;">
+                    <div style="flex:1 1 400px; background:#fff; padding:12px; border-radius:8px;">
+                        <h3 style="margin:6px 0 12px 0;">Top fournisseurs (montant)</h3>
+                        <canvas id="topFournisseurs"></canvas>
+                    </div>
+
+                    <div style="flex:1 1 300px; background:#fff; padding:12px; border-radius:8px;">
+                        <h3 style="margin:6px 0 12px 0;">Totaux</h3>
+                        <div style="font-size:18px;">Bons de commande: <strong>${nbBonCommandes != null ? nbBonCommandes : 0}</strong></div>
+                        <div style="font-size:18px;">Factures fournisseurs: <strong>${nbFacturesFournisseurs != null ? nbFacturesFournisseurs : 0}</strong></div>
+                        <div style="font-size:18px;">Montant total achats: <strong>${montantTotalAchats != null ? montantTotalAchats : 0} Ar</strong></div>
+                    </div>
                 </div>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <script>
+                    (function(){
+                        fetch('${pageContext.request.contextPath}/api/dashboard/achat')
+                        .then(r => r.json())
+                        .then(data => {
+                            const ctx = document.getElementById('topFournisseurs').getContext('2d');
+                            new Chart(ctx, {
+                                type: 'bar',
+                                data: { labels: data.topFournLabels || [], datasets: [{ label: 'Montant', data: data.topFournValues || [], backgroundColor: 'rgba(153,102,255,0.6)' }] },
+                                options: { indexAxis: 'y', responsive:true, maintainAspectRatio:false }
+                            });
+                        })
+                        .catch(err => console.error('Erreur chargement données dashboard achat', err));
+                    })();
+                </script>
             </div>
 
             <!-- Menu Fonctionnalités -->
