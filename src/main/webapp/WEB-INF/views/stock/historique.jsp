@@ -13,11 +13,43 @@
     <!-- Left Navbar -->
     <nav class="navbar">
         <h2>Stock Menu</h2>
+
         <ul>
-            <li><a href="${pageContext.request.contextPath}/stock/articles">🛍️ Liste des articles</a></li>
-            <li><a href="${pageContext.request.contextPath}/stock/mouvements">⏳ Historique des mouvements</a></li>
-            <li><a href="${pageContext.request.contextPath}/transfert/transfertpage">🔄 Initialisation Transfert</a></li>
-            
+            <!-- Visible for all logged users -->
+            <li>
+                <a href="${pageContext.request.contextPath}/inventaire/pageInventaire">
+                    📦 Inventaire
+                </a>
+            </li>
+
+            <li>
+                <a href="${pageContext.request.contextPath}/stock/articles">
+                    🛍️ Liste des articles
+                </a>
+            </li>
+
+            <li>
+                <a href="${pageContext.request.contextPath}/stock/mouvements">
+                    ⏳ Historique des mouvements
+                </a>
+            </li>
+
+            <!-- Visible only if role.niveauValidation > 0 -->
+            <c:if test="${not empty sessionScope.user
+                        and not empty sessionScope.user.role
+                        and sessionScope.user.role.niveauValidation > 0}">
+                <li>
+                    <a href="${pageContext.request.contextPath}/transfert/transfertpage">
+                        🔄 Initialisation Transfert
+                    </a>
+                </li>
+
+                <li>
+                    <a href="${pageContext.request.contextPath}/methode-article/form">
+                        🔄 Change the methode of an article
+                    </a>
+                </li>
+            </c:if>
         </ul>
     </nav>
 

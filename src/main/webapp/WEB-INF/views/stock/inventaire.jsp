@@ -18,7 +18,7 @@
                 <li><a href="${pageContext.request.contextPath}/inventaire/pageInventaire">📝 Nouvel Inventaire</a></li>
                 <li><a href="${pageContext.request.contextPath}/inventaire/historique">📋 Historique</a></li>
                 <li><a href="${pageContext.request.contextPath}/stock/dashboard">🏠 Dashboard</a></li>
-            <li><a href="${pageContext.request.contextPath}/transfert/transfertpage">🔄 Initialisation Transfert</a></li>
+                <li><a href="${pageContext.request.contextPath}/transfert/transfertpage">🔄 Initialisation Transfert</a></li>
                 <li><a href="${pageContext.request.contextPath}/stock/articles">🛍️ Liste des articles</a></li>
                 <li><a href="${pageContext.request.contextPath}/stock/mouvements">⏳ Historique des mouvements</a></li>
             </ul>

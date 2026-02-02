@@ -67,7 +67,7 @@ public class LoginStockController {
 
             return "stock/dashboard";
         } else {
-            return "stock/operateur";
+            return "stock/dashboard";
         }
     }
 
