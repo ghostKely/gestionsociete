@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ventetovo.entity.*;
+import com.ventetovo.repository.ArticleRepository;
 import com.ventetovo.service.*;
 
 @RestController
@@ -25,6 +26,7 @@ public class DashboardApiController {
     private final MouvementStockService mouvementStockService;
     private final BonCommandeService bonCommandeService;
     private final FactureFournisseurService factureFournisseurService;
+    private final ArticleRepository articleRepository;
 
     @Autowired
     public DashboardApiController(FactureClientService factureClientService,
@@ -32,13 +34,15 @@ public class DashboardApiController {
             StockService stockService,
             MouvementStockService mouvementStockService,
             BonCommandeService bonCommandeService,
-            FactureFournisseurService factureFournisseurService) {
+            FactureFournisseurService factureFournisseurService,
+            ArticleRepository articleRepository) {
         this.factureClientService = factureClientService;
         this.ligneCommandeClientService = ligneCommandeClientService;
         this.stockService = stockService;
         this.mouvementStockService = mouvementStockService;
         this.bonCommandeService = bonCommandeService;
         this.factureFournisseurService = factureFournisseurService;
+        this.articleRepository = articleRepository;
     }
 
     @GetMapping("/vente")
@@ -84,21 +88,14 @@ public class DashboardApiController {
 
         List<String> topArticleLabels = new ArrayList<>();
         List<Integer> topArticleValues = new ArrayList<>();
-        // Lazy resolve names from top list via the Ligne objects' article relation where possible
+        // Lazy resolve names from top list via the Article repository
         for (Map.Entry<Integer, Integer> e : top) {
             Integer aid = e.getKey();
             Integer qty = e.getValue();
             // try to get a representative name
-            String name = lignes.stream()
-                    .filter(l -> aid.equals(l.getIdArticle()))
-                    .map(l -> {
-                        try {
-                            Article a = l.getArticle();
-                            return a != null && a.getDesignation() != null ? a.getDesignation() : (a != null ? String.valueOf(a.getIdArticle()) : "#" + aid);
-                        } catch (Exception ex) {
-                            return "#" + aid;
-                        }
-                    }).findFirst().orElse("#" + aid);
+            String name = articleRepository.findById(aid)
+                    .map(a -> a.getDesignation() != null ? a.getDesignation() : "#" + aid)
+                    .orElse("#" + aid);
             topArticleLabels.add(name);
             topArticleValues.add(qty);
         }
