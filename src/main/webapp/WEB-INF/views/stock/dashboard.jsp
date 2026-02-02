@@ -56,6 +56,24 @@
     <div class="content-wrapper">
         <h1>Mouvement Stock Calculé</h1>
 
+        <!-- Power BI Dashboard -->
+        <div class="powerbi-section" style="margin-bottom: 40px;">
+            <h2 style="color: #2874A6;">📊 Analyse Power BI - Module Stock</h2>
+            <div class="powerbi-container" style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px;">
+                <iframe 
+                    title="Dashboard Stock" 
+                    width="100%" 
+                    height="600" 
+                    src="YOUR_POWERBI_EMBED_URL_STOCK" 
+                    frameborder="0" 
+                    allowFullScreen="true">
+                </iframe>
+                <p style="color: #888; font-size: 12px; margin-top: 10px; text-align: center;">
+                    <em>Remplacez YOUR_POWERBI_EMBED_URL_STOCK par l'URL d'intégration de votre rapport Power BI</em>
+                </p>
+            </div>
+        </div>
+
         <table>
             <thead>
             <tr>
