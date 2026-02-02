@@ -84,7 +84,7 @@
                                         </c:if>
 
                                         <c:if test="${devis.statut == 'ACCEPTE'}">
-                                            <form action="${pageContext.request.contextPath}/vente/devis/transformer-en-commande" method="post" style="display:inline;">
+                                            <form action="${pageContext.request.contextPath}/vente/commandes/nouveau?idDevis=${devis.idDevis}" method="get" style="display:inline;">
                                                 <input type="hidden" name="idDevis" value="${devis.idDevis}">
                                                 <button type="submit" class="btn-action btn-primary">Transformer en commande</button>
                                             </form>
