@@ -54,74 +54,106 @@
 
             <!-- Graphiques (Chart.js) -->
             <div class="charts-section" style="margin-top: 40px;">
-                <h2 style="color: #d35400;">📊 Visualisations - Module Vente</h2>
-                <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:16px;">
-                    <div style="flex:1 1 600px; background:#fff; padding:12px; border-radius:8px;">
-                        <h3 style="margin:6px 0 12px 0;">Chiffre d'affaires par mois</h3>
-                        <canvas id="salesChart"></canvas>
-                    </div>
-
-                    <div style="width:360px; background:#fff; padding:12px; border-radius:8px;">
-                        <h3 style="margin:6px 0 12px 0;">Factures par statut</h3>
+                <h2 style="color: #d35400;">📊 Répartition des Factures par Statut</h2>
+                <div style="display:flex; justify-content: center; margin-top:16px;">
+                    <div style="width:500px; height:500px; background:#fff; padding:20px; border-radius:8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         <canvas id="invoicesPie"></canvas>
-                    </div>
-
-                    <div style="flex:1 1 100%; background:#fff; padding:12px; border-radius:8px; margin-top:12px;">
-                        <h3 style="margin:6px 0 12px 0;">Top articles (quantité)</h3>
-                        <canvas id="topArticlesChart"></canvas>
                     </div>
                 </div>
                 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
                 <script>
                     (function(){
-                        fetch('${pageContext.request.contextPath}/api/dashboard/vente')
+                        fetch('${pageContext.request.contextPath}/api/dashboard/vente/pie')
                         .then(r => r.json())
                         .then(data => {
-                            // Sales bar
-                            const salesCtx = document.getElementById('salesChart').getContext('2d');
-                            new Chart(salesCtx, {
-                                type: 'bar',
+                            const pieCtx = document.getElementById('invoicesPie').getContext('2d');
+                            
+                            // Vérifier si des données existent
+                            const hasData = data.invoiceStatusLabels && data.invoiceStatusLabels.length > 0 && 
+                                           data.invoiceStatusValues && data.invoiceStatusValues.some(v => v > 0);
+                            
+                            new Chart(pieCtx, {
+                                type: 'pie',
                                 data: {
-                                    labels: data.salesLabels || [],
+                                    labels: hasData ? data.invoiceStatusLabels : ['Aucune donnée'],
                                     datasets: [{
-                                        label: 'Montant TTC',
-                                        data: data.salesValues || [],
-                                        backgroundColor: 'rgba(54, 162, 235, 0.6)'
+                                        data: hasData ? data.invoiceStatusValues : [1],
+                                        backgroundColor: hasData ? ['#ff6384','#36a2eb','#ffcd56','#4bc0c0','#9966ff'] : ['#e0e0e0'],
+                                        borderWidth: 2,
+                                        borderColor: '#fff'
                                     }]
                                 },
-                                options: { responsive:true, maintainAspectRatio:false }
+                                options: { 
+                                    responsive: true, 
+                                    maintainAspectRatio: true,
+                                    plugins: {
+                                        legend: {
+                                            display: true,
+                                            position: 'bottom',
+                                            labels: {
+                                                font: {
+                                                    size: 14
+                                                },
+                                                padding: 15
+                                            }
+                                        },
+                                        tooltip: {
+                                            enabled: hasData,
+                                            callbacks: {
+                                                label: function(context) {
+                                                    if (!hasData) return '';
+                                                    let label = context.label || '';
+                                                    if (label) {
+                                                        label += ': ';
+                                                    }
+                                                    label += context.parsed + ' facture(s)';
+                                                    return label;
+                                                }
+                                            }
+                                        },
+                                        title: {
+                                            display: !hasData,
+                                            text: 'Aucune donnée disponible',
+                                            color: '#999',
+                                            font: {
+                                                size: 16
+                                            }
+                                        }
+                                    }
+                                }
                             });
-
-                            // Invoices pie
+                        })
+                        .catch(err => {
+                            console.error('Erreur chargement factures par statut', err);
+                            // Afficher un camembert vide en cas d'erreur
                             const pieCtx = document.getElementById('invoicesPie').getContext('2d');
                             new Chart(pieCtx, {
                                 type: 'pie',
                                 data: {
-                                    labels: data.invoiceStatusLabels || [],
+                                    labels: ['Aucune donnée'],
                                     datasets: [{
-                                        data: data.invoiceStatusValues || [],
-                                        backgroundColor: ['#ff6384','#36a2eb','#ffcd56','#4bc0c0','#9966ff']
+                                        data: [1],
+                                        backgroundColor: ['#e0e0e0'],
+                                        borderWidth: 2,
+                                        borderColor: '#fff'
                                     }]
                                 },
-                                options: { responsive:true, maintainAspectRatio:false }
+                                options: { 
+                                    responsive: true, 
+                                    maintainAspectRatio: true,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: { enabled: false },
+                                        title: {
+                                            display: true,
+                                            text: 'Erreur de chargement des données',
+                                            color: '#999',
+                                            font: { size: 16 }
+                                        }
+                                    }
+                                }
                             });
-
-                            // Top articles horizontal bar
-                            const topCtx = document.getElementById('topArticlesChart').getContext('2d');
-                            new Chart(topCtx, {
-                                type: 'bar',
-                                data: {
-                                    labels: data.topArticleLabels || [],
-                                    datasets: [{
-                                        label: 'Quantité',
-                                        data: data.topArticleValues || [],
-                                        backgroundColor: 'rgba(255,159,64,0.6)'
-                                    }]
-                                },
-                                options: { indexAxis: 'y', responsive:true, maintainAspectRatio:false }
-                            });
-                        })
-                        .catch(err => console.error('Erreur chargement données dashboard vente', err));
+                        });
                     })();
                 </script>
             </div>
