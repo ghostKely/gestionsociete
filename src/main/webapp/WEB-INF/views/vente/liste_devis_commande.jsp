@@ -4,6 +4,7 @@
 <html>
 <head>
     <title>Créer Commande Client</title>
+    <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/vente.css">
     <style>
         table {
             width:100%;
