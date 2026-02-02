@@ -1,5 +1,12 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Livraisons facturables</title>
+    <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/vente.css">
+</head>
+<body>
 
 <h2>📄 Livraisons facturables</h2>
 
