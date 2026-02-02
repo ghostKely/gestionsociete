@@ -35,8 +35,8 @@ public class FactureClientService {
         LivraisonClient livraison = livraisonRepository.findById(idLivraison)
                 .orElseThrow(() -> new RuntimeException("Livraison introuvable"));
 
-        if (!"LIVREE".equals(livraison.getStatut()) &&
-                !"PARTIELLE".equals(livraison.getStatut())) {
+        if (!"LIVREE".equalsIgnoreCase(livraison.getStatut()) &&
+                !"PARTIELLE".equalsIgnoreCase(livraison.getStatut())) {
             throw new RuntimeException("La livraison n'est pas facturable");
         }
 

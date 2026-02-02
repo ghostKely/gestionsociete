@@ -52,7 +52,7 @@ JOIN utilisateur u ON u.email = 'magasinier@vente.com'
 WHERE s.code_site = 'SITE-ANT-001';
 
 INSERT INTO methode_article (id_article, id_methode)
-VALUES (1, 2);
+VALUES (1, 1);
 
 INSERT INTO methode_article (id_article, id_methode)
 VALUES (2, 2);

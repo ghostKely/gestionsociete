@@ -74,6 +74,7 @@ public class LivraisonClientService {
         livraison.setNumeroSuivi(numeroSuivi);
         livraison.setStatut("EN_PREPARATION");
         livraison.setIdPreparateur(idPreparateur);
+        livraison.setIdLivreur(idPreparateur);
         livraison.setCreatedAt(LocalDateTime.now());
 
         livraison = livraisonRepository.save(livraison);

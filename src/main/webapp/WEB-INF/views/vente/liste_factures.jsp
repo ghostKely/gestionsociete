@@ -35,21 +35,42 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <c:forEach var="facture" items="${factures}">
+                        <c:forEach var="f" items="${factures}">
                             <tr>
-                                <td>${facture.numeroFacture}</td>
-                                <td>${facture.idClient}</td>
-                                <td>${facture.idCommande}</td>
-                                <td>${facture.dateFacture}</td>
+                                <td>${f.numeroFacture}</td>
+                                <td>${f.idClient}</td>
+                                <td>${f.idCommande}</td>
+                                <td>${f.dateFacture}</td>
                                 <td>
-                                    <span class="status-badge status-${facture.statut == 'PAYEE' ? 'payee' : (facture.statut == 'ENVOYEE' ? 'expediee' : 'en-attente')}">
-                                        ${facture.statut}
+                                    <span class="status-badge status-${f.statut == 'BROUILLON' ? 'brouillon' : 
+                                                                       f.statut == 'VALIDEE' ? 'validee' : 
+                                                                       f.statut == 'ENVOYEE' ? 'envoyee' : 'autre'}">
+                                        ${f.statut}
                                     </span>
                                 </td>
-                                <td>${facture.montantTtc} Ar</td>
+                                <td>${f.montantTtc}</td>
                                 <td>
                                     <div class="action-buttons">
-                                        <a href="${pageContext.request.contextPath}/vente/factures/${facture.idFacture}" class="btn-action btn-view">Voir</a>
+                                        <a href="${pageContext.request.contextPath}/vente/factures/${f.idFacture}" 
+                                           class="btn-action btn-view">
+                                            👁 Voir
+                                        </a>
+                                        
+                                        <c:if test="${f.statut == 'BROUILLON'}">
+                                            <form action="${pageContext.request.contextPath}/vente/factures/valider"
+                                                  method="post" class="inline-form">
+                                                <input type="hidden" name="idFacture" value="${f.idFacture}" />
+                                                <button type="submit" class="btn-action btn-validate">✅ Valider</button>
+                                            </form>
+                                        </c:if>
+                                        
+                                        <c:if test="${f.statut == 'VALIDEE'}">
+                                            <form action="${pageContext.request.contextPath}/vente/factures/envoyer"
+                                                  method="post" class="inline-form">
+                                                <input type="hidden" name="idFacture" value="${f.idFacture}" />
+                                                <button type="submit" class="btn-action btn-send">📤 Envoyer</button>
+                                            </form>
+                                        </c:if>
                                     </div>
                                 </td>
                             </tr>
@@ -65,7 +86,11 @@
             </div>
 
             <div class="form-buttons" style="margin-top: 30px;">
-                <a href="${pageContext.request.contextPath}/vente/accueil" class="btn-secondary">Retour</a>
+                <a href="${pageContext.request.contextPath}/vente/factures/livraisons-facturables" 
+                   class="nav-link nav-link-factures">
+                    📄 Livraisons facturables
+                </a>
+                <a href="${pageContext.request.contextPath}/vente/accueil" class="btn-secondary">⬅ Retour</a>
             </div>
         </div>
     </div>

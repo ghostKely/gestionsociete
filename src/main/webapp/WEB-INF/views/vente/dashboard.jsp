@@ -41,7 +41,7 @@
                     <div class="card-label">Livraisons effectuées</div>
                 </div>
                 <div class="dashboard-card">
-                    <h3>Factures</h3>
+                    <h3>Factures</h3>   
                     <div class="card-value">${nbFactures}</div>
                     <div class="card-label">Factures émises</div>
                 </div>
@@ -50,6 +50,94 @@
                     <div class="card-value">${chiffreAffaires} Ar</div>
                     <div class="card-label">Total CA</div>
                 </div>
+            </div>
+
+            <!-- Graphiques (Chart.js) -->
+            <div class="charts-section" style="margin-top: 40px;">
+                <h2 style="color: #d35400;">📊 Répartition des Activités Commerciales</h2>
+                <div style="display:flex; justify-content: center; margin-top:16px;">
+                    <div style="width:600px; height:500px; background:#fff; padding:20px; border-radius:8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <script>
+                    (function(){
+                        // Récupérer les valeurs depuis les variables EL
+                        const nbDevis = ${nbDevis != null ? nbDevis : 0};
+                        const nbCommandes = ${nbCommandes != null ? nbCommandes : 0};
+                        const nbLivraisons = ${nbLivraisons != null ? nbLivraisons : 0};
+                        const nbFactures = ${nbFactures != null ? nbFactures : 0};
+                        const nbClients = ${nbClients != null ? nbClients : 0};
+                        
+                        // Préparer les données pour le graphique
+                        const labels = ['Clients', 'Devis', 'Commandes', 'Livraisons', 'Factures'];
+                        const dataValues = [nbClients, nbDevis, nbCommandes, nbLivraisons, nbFactures];
+                        const backgroundColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
+                        
+                        // Vérifier si on a des données
+                        const hasData = dataValues.some(value => value > 0);
+                        
+                        const ctx = document.getElementById('salesChart').getContext('2d');
+                        
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Nombre',
+                                    data: dataValues,
+                                    backgroundColor: backgroundColors,
+                                    borderColor: backgroundColors.map(color => color.replace('0.8', '1')),
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        display: true,
+                                        position: 'top',
+                                    },
+                                    title: {
+                                        display: !hasData,
+                                        text: 'Aucune donnée disponible',
+                                        color: '#999',
+                                        font: {
+                                            size: 16
+                                        }
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                return `${context.dataset.label}: ${context.parsed.y}`;
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        title: {
+                                            display: true,
+                                            text: 'Nombre'
+                                        },
+                                        ticks: {
+                                            stepSize: 1
+                                        }
+                                    },
+                                    x: {
+                                        title: {
+                                            display: true,
+                                            text: 'Catégories'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    })();
+                </script>
             </div>
 
             <!-- Menu Fonctionnalités -->

@@ -12,9 +12,8 @@ VALUES (
 
 
 -- Article géré en FIFO / LIFO
-INSERT INTO article (id_article, code, designation)
+INSERT INTO article (code, designation)
 VALUES (
-    1,
     'TSHIRT-FIFO',
     'T-Shirt coton standard (FIFO/LIFO)'
 );
